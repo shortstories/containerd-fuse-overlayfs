@@ -197,13 +197,13 @@ func (o *snapshotter) Commit(ctx context.Context, name, key string, opts ...snap
 		return err
 	}
 
-	defer func() {
-		if err != nil {
-			if rerr := t.Rollback(); rerr != nil {
-				log.G(ctx).WithError(rerr).Warn("failed to rollback transaction")
-			}
-		}
-	}()
+	//defer func() {
+	//	if err != nil {
+	//		if rerr := t.Rollback(); rerr != nil {
+	//			log.G(ctx).WithError(rerr).Warn("failed to rollback transaction")
+	//		}
+	//	}
+	//}()
 
 	// grab the existing id
 	id, _, _, err := storage.GetInfo(ctx, key)
@@ -217,6 +217,9 @@ func (o *snapshotter) Commit(ctx context.Context, name, key string, opts ...snap
 	}
 
 	if _, err = storage.CommitActive(ctx, key, name, snapshots.Usage(usage), opts...); err != nil {
+		if rerr := t.Rollback(); rerr != nil {
+			log.G(ctx).WithError(rerr).Warn("failed to rollback transaction")
+		}
 		return errors.Wrap(err, "failed to commit snapshot")
 	}
 	return t.Commit()
